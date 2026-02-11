@@ -3,218 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFC Link</title>
+    <title>UNIDENTIFIED SIGNAL</title>
     <style>
-        :root {
-            --primary: #00f3ff;
-            --secondary: #bc13fe;
-            --bg: #050505;
-        }
-
         body {
             margin: 0;
             overflow: hidden;
-            background: var(--bg);
+            background-color: #000;
+            touch-action: none; /* Mobilde kaydırmayı engelle */
             font-family: 'Courier New', Courier, monospace;
-            color: var(--primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
         }
-
         canvas {
+            display: block;
+        }
+        #overlay {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 1;
-            opacity: 0.3;
-        }
-
-        /* Container */
-        .container {
-            position: relative;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            box-shadow: inset 0 0 100px rgba(0, 255, 255, 0.2);
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
             z-index: 10;
-            text-align: center;
-            width: 300px;
-            padding: 40px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
-            border-radius: 20px;
         }
-
-        /* Dönen Çekirdek (NFC Temsili) */
-        .core-wrapper {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            border-top-color: var(--primary);
-            border-bottom-color: var(--secondary);
-            animation: spin 3s linear infinite;
-        }
-
-        .r1 { width: 100%; height: 100%; animation-duration: 2s; border-width: 3px; box-shadow: 0 0 20px var(--primary); }
-        .r2 { width: 70%; height: 70%; animation-duration: 4s; animation-direction: reverse; border-left-color: var(--primary); border-right-color: var(--secondary); }
-        .r3 { width: 40%; height: 40%; background: var(--primary); opacity: 0.8; animation: pulse 1s ease-in-out infinite alternate; box-shadow: 0 0 30px var(--primary); border: none; }
-
-        /* Yazı Stilleri */
-        h1 {
-            font-size: 1.5rem;
-            margin: 0;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            text-shadow: 0 0 10px var(--primary);
-        }
-
-        p {
-            font-size: 0.8rem;
-            color: #fff;
-            opacity: 0.7;
-            margin-top: 10px;
-            margin-bottom: 30px;
-        }
-
-        /* Buton */
-        .btn {
-            display: inline-block;
-            padding: 12px 30px;
-            background: transparent;
-            color: var(--primary);
-            text-decoration: none;
-            border: 1px solid var(--primary);
-            font-weight: bold;
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn:hover {
-            background: var(--primary);
-            color: #000;
-            box-shadow: 0 0 30px var(--primary);
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: 0.5s;
-        }
-        
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        /* Animasyonlar */
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 1; } }
-
     </style>
 </head>
 <body>
 
-    <canvas id="matrix"></canvas>
+<div id="overlay"></div>
+<canvas id="canvas"></canvas>
 
-    <div class="container">
-        <div class="core-wrapper">
-            <div class="ring r1"></div>
-            <div class="ring r2"></div>
-            <div class="ring r3"></div>
-        </div>
-        
-        <h1 data-value="SYSTEM_LINK">LOADING...</h1>
-        <p data-value="EMBEDDED // DEV">INITIALIZING...</p>
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-        <a href="https://github.com/USERNAME" class="btn">GITHUB ACCESS</a>
-    </div>
+    let width, height;
+    let particles = [];
+    let hue = 0;
+    
+    // Mouse/Touch etkileşimi için
+    const mouse = { x: undefined, y: undefined };
 
-    <script>
-        // 1. Matrix Rain Effect
-        const canvas = document.getElementById('matrix');
-        const ctx = canvas.getContext('2d');
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    // Etkileşim Listener'ları
+    window.addEventListener('mousemove', e => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+    });
+    
+    window.addEventListener('touchmove', e => {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+    });
 
-        const chars = '01XYZEHO'; // Hex-ish characters
-        const fontSize = 14;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
+    // Başlangıçta merkeze odaklan
+    mouse.x = width / 2;
+    mouse.y = height / 2;
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; // Trail effect
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    class Particle {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.size = Math.random() * 2 + 0.1;
+            this.speedX = Math.random() * 3 - 1.5;
+            this.speedY = Math.random() * 3 - 1.5;
+            this.color = 'rgba(0, 255, 255, 0.5)';
+        }
 
-            ctx.fillStyle = '#00f3ff'; // Text Color
-            ctx.font = fontSize + 'px monospace';
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = chars.charAt(Math.floor(Math.random() * chars.length));
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
+        update() {
+            // Fareye/Parmağa doğru çekim kuvveti (Magnet Effect)
+            if (mouse.x != undefined && mouse.y != undefined) {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                let forceDirectionX = dx / distance;
+                let forceDirectionY = dy / distance;
+                let maxDistance = 500; // Çekim alanı
+                let force = (maxDistance - distance) / maxDistance;
+                
+                if (distance < maxDistance) {
+                    this.speedX += forceDirectionX * force * 0.5;
+                    this.speedY += forceDirectionY * force * 0.5;
                 }
-                drops[i]++;
+            }
+
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            // Sürtünme (Hızın sonsuza gitmemesi için)
+            this.speedX *= 0.95;
+            this.speedY *= 0.95;
+
+            // Kenarlardan sekme
+            if (this.x < 0 || this.x > width) this.speedX = -this.speedX;
+            if (this.y < 0 || this.y > height) this.speedY = -this.speedY;
+
+            // Renk döngüsü
+            this.color = `hsl(${hue}, 100%, 50%)`;
+        }
+
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        for (let i = 0; i < 200; i++) {
+            particles.push(new Particle());
+        }
+    }
+    initParticles();
+
+    // HUD Çizimi (Teknik Veriler)
+    function drawHUD() {
+        ctx.font = "12px monospace";
+        ctx.fillStyle = `rgba(0, 255, 255, 0.7)`;
+        
+        // Sol Üst
+        ctx.fillText(`SYS_INTEGRITY: ${(Math.random() * 100).toFixed(2)}%`, 20, 30);
+        ctx.fillText(`BUFFER: [${Math.random() > 0.5 ? 'OK' : 'BUSY'}]`, 20, 45);
+        
+        // Sağ Alt
+        ctx.fillText(`X: ${mouse.x?.toFixed(1) || 0}`, width - 100, height - 40);
+        ctx.fillText(`Y: ${mouse.y?.toFixed(1) || 0}`, width - 100, height - 25);
+
+        // Ortadaki Daire (Nişangah)
+        ctx.beginPath();
+        ctx.strokeStyle = `hsl(${hue + 180}, 100%, 50%)`;
+        ctx.lineWidth = 2;
+        ctx.arc(mouse.x, mouse.y, 30, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Daire etrafında dönen çizgi
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, 40, Date.now() / 200, Date.now() / 200 + 1);
+        ctx.stroke();
+    }
+
+    function animate() {
+        // Ekranı her karede hafifçe karart (İz bırakma efekti için alpha 0.1)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, width, height);
+
+        // Parçacıkları işle
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+            
+            // Parçacıklar arası çizgiler (Constellation Effect)
+            for (let j = i; j < particles.length; j++) {
+                let dx = particles[i].x - particles[j].x;
+                let dy = particles[i].y - particles[j].y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance < 100) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${1 - distance/100})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                }
             }
         }
-        setInterval(drawMatrix, 50);
 
-        // 2. Hacker Text Decrypt Effect
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        
-        function hackEffect(element) {
-            let iterations = 0;
-            const targetText = element.dataset.value;
-            
-            const interval = setInterval(() => {
-                element.innerText = targetText.split("")
-                    .map((letter, index) => {
-                        if(index < iterations) {
-                            return targetText[index];
-                        }
-                        return letters[Math.floor(Math.random() * 36)]
-                    })
-                    .join("");
-                
-                if(iterations >= targetText.length){ 
-                    clearInterval(interval);
-                }
-                
-                iterations += 1 / 3;
-            }, 30);
-        }
+        drawHUD();
+        hue += 1; // Renkleri sürekli kaydır
+        requestAnimationFrame(animate);
+    }
 
-        // Trigger text effect on load
-        window.onload = () => {
-            const h1 = document.querySelector('h1');
-            const p = document.querySelector('p');
-            
-            setTimeout(() => hackEffect(h1), 500);
-            setTimeout(() => hackEffect(p), 1500);
-        }
+    animate();
+</script>
 
-        // Resize fix
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-    </script>
 </body>
 </html>
